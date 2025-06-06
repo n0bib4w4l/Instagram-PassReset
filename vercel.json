@@ -8,7 +8,11 @@
   ],
   "routes": [
     {
-      "src": "/insta-reset",
+      "src": "/reset",
+      "dest": "index.js"
+    },
+    {
+      "src": "/reset-password",
       "dest": "index.js"
     },
     {
