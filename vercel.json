@@ -9,11 +9,18 @@
   "routes": [
     {
       "src": "/reset",
-      "dest": "index.js"
+      "dest": "index.js",
+      "methods": ["GET"]
     },
     {
       "src": "/reset-password",
-      "dest": "index.js"
+      "dest": "index.js",
+      "methods": ["GET"]
+    },
+    {
+      "src": "/",
+      "dest": "index.js",
+      "methods": ["GET"]
     },
     {
       "src": "/(.*)",
