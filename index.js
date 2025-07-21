@@ -62,13 +62,13 @@ app.get('/reset-password', async (req, res) => {
   'referer': 'https://www.instagram.com/accounts/password/reset/',
   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
   'x-asbd-id': '359341',
-  'x-csrftoken': 'VihZjKuiwi9a7QoiHm7p3VUaWsrUZT9w',
+  'x-csrftoken': 'YRxXETtYbbIcq2laTt8HaE9ileMLiLCl',
   'x-ig-app-id': '936619743392459',
   'x-ig-www-claim': 'hmac.AR3GYR6M7qkLF-ksuxVbQaC5cJUvY9DzOkKYK6YQ2-rsBDq8',
   'x-instagram-ajax': '1023570583',
   'x-requested-with': 'XMLHttpRequest',
   'x-web-session-id': 'pwrl9c:3afhmz:dffzwf',
-  'cookie': 'datr=EKPmZxZZHWmUMN_J5vlfiI6G; ig_did=A1AE3F95-E2DB-40E0-B6C0-B1297A03102D; mid=Z-ajEgALAAGJkoXjxeU4zcKwv2hv; ig_nrcb=1; ps_l=1; ps_n=1; csrftoken=VihZjKuiwi9a7QoiHm7p3VUaWsrUZT9w; ds_user_id=74837220727; wd=811x633; sessionid=74837220727%3APY6244MH2BKl7c%3A18%3AAYeEodPkqTVNyEhkburk0_F2a95zVR970S243f13KA; rur=VLL%5C05474837220727%5C0541780748754%3A01fe526f149472baa05de05ed672025b0d9a584af495bdeb912c071c2c49342ec2dc7417',
+  'cookie': 'datr=EKPmZxZZHWmUMN_J5vlfiI6G; ig_did=D64F9750-706C-46CB-A1AA-874F3CC1B56F; mid=Z-ajEgALAAGJkoXjxeU4zcKwv2hv; ig_nrcb=1; ps_l=1; ps_n=1; csrftoken=VihZjKuiwi9a7QoiHm7p3VUaWsrUZT9w; ds_user_id=74837220727; wd=811x633; sessionid=74837220727%3APY6244MH2BKl7c%3A18%3AAYeEodPkqTVNyEhkburk0_F2a95zVR970S243f13KA; rur=VLL%5C05474837220727%5C0541780748754%3A01fe526f149472baa05de05ed672025b0d9a584af495bdeb912c071c2c49342ec2dc7417',
 };
 
 
