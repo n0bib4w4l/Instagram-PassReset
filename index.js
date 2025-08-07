@@ -1,6 +1,5 @@
-// index.js - Alternative Instagram Reset Helper (Browser-based approach)
+// index.js - Working Instagram Password Reset API
 export default async function handler(req, res) {
-  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -11,286 +10,278 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== 'GET') {
-    return res.status(405).json({ 
-      error: 'Method not allowed',
-      message: 'Only GET requests are supported'
+    return res.status(405).json({ error: 'Only GET allowed' });
+  }
+
+  const { username } = req.query;
+
+  if (!username) {
+    return res.status(400).json({
+      error: 'Username missing',
+      usage: `${req.headers.host}/?username=TARGET_USER`
     });
   }
 
-  const { username, action = 'guide' } = req.query;
+  try {
+    console.log(`🔥 Trying reset for: ${username}`);
 
-  // Action: guide - Returns step by step instructions
-  if (action === 'guide') {
-    return res.status(200).json({
-      success: true,
-      message: "📋 Instagram Password Reset Guide",
-      note: "⚠️ Instagram has blocked automated reset requests. Use manual method instead.",
-      methods: [
-        {
-          method: "🌐 Web Browser Method",
-          steps: [
-            "1. Go to https://www.instagram.com/accounts/password/reset/",
-            "2. Enter username or email",
-            "3. Complete the captcha/challenge",
-            "4. Click 'Send Login Link'",
-            "5. Check email for reset link"
-          ],
-          success_rate: "95%",
-          time_required: "2-3 minutes"
-        },
-        {
-          method: "📱 Mobile App Method", 
-          steps: [
-            "1. Open Instagram mobile app",
-            "2. Tap 'Get help signing in'",
-            "3. Enter username or email",
-            "4. Tap 'Next'",
-            "5. Choose reset method (Email/SMS)",
-            "6. Follow the instructions"
-          ],
-          success_rate: "98%",
-          time_required: "1-2 minutes"
-        }
-      ],
-      automation_tools: {
-        browser_automation: {
-          tool: "Puppeteer/Playwright",
-          note: "Can handle captcha with 2captcha service",
-          example_url: generateAutomationScript()
-        },
-        chrome_extension: {
-          note: "Create extension to auto-fill and submit",
-          manifest_required: true
-        }
-      },
-      username: username || "example_user"
-    });
-  }
-
-  // Action: check - Check if account exists (alternative method)
-  if (action === 'check' && username) {
-    try {
-      // Try to check if profile exists (this still works)
-      const checkUrl = `https://www.instagram.com/${username.replace('@', '').replace(/[^a-zA-Z0-9._]/g, '')}/`;
-      
-      const response = await fetch(checkUrl, {
-        method: 'HEAD',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-      });
-
-      if (response.status === 200) {
-        return res.status(200).json({
-          success: true,
-          message: `✅ Account "${username}" exists`,
-          profile_url: checkUrl,
-          reset_instructions: {
-            step1: "Go to https://www.instagram.com/accounts/password/reset/",
-            step2: `Enter: ${username}`,
-            step3: "Complete captcha and click 'Send Login Link'",
-            step4: "Check email associated with this account"
-          },
-          automated_alternative: {
-            note: "For automation, consider browser automation tools",
-            tools: ["Puppeteer", "Playwright", "Selenium"],
-            captcha_services: ["2captcha", "Anti-Captcha", "CapSolver"]
-          }
-        });
-      } else {
-        return res.status(200).json({
-          success: false,
-          message: `❌ Account "${username}" not found or private`,
-          suggestions: [
-            "Check spelling of username",
-            "Try without @ symbol", 
-            "Account might be private or suspended",
-            "Try using email instead of username"
-          ]
-        });
-      }
-    } catch (error) {
-      return res.status(200).json({
-        success: false,
-        message: "⚠️ Could not verify account",
-        error: error.message,
-        fallback: "Try manual reset at instagram.com"
-      });
+    // Method 1: Try GraphQL endpoint (new approach)
+    const graphqlResult = await tryGraphQLMethod(username);
+    if (graphqlResult.success) {
+      return res.status(200).json(graphqlResult);
     }
-  }
 
-  // Action: script - Returns automation script
-  if (action === 'script') {
+    // Method 2: Try mobile API endpoint  
+    const mobileResult = await tryMobileAPI(username);
+    if (mobileResult.success) {
+      return res.status(200).json(mobileResult);
+    }
+
+    // Method 3: Try web endpoint with fresh cookies
+    const webResult = await tryWebEndpoint(username);
+    if (webResult.success) {
+      return res.status(200).json(webResult);
+    }
+
+    // Method 4: Fallback to alternative endpoint
+    const altResult = await tryAlternativeEndpoint(username);
+    if (altResult.success) {
+      return res.status(200).json(altResult);
+    }
+
+    // All methods failed
     return res.status(200).json({
-      success: true,
-      message: "🤖 Browser Automation Script",
-      note: "Use this with Puppeteer/Playwright for automation",
-      script: {
-        puppeteer_example: generatePuppeteerScript(),
-        playwright_example: generatePlaywrightScript(),
-        installation: [
-          "npm install puppeteer",
-          "npm install playwright"
+      success: false,
+      message: `❌ All methods failed for "${username}"`,
+      error: 'Instagram has strict protection now',
+      tried_methods: ['GraphQL', 'Mobile API', 'Web Endpoint', 'Alternative'],
+      fallback_solution: {
+        manual_method: `https://www.instagram.com/accounts/password/reset/`,
+        instructions: [
+          'Go to Instagram reset page',
+          'Enter username manually', 
+          'Complete captcha',
+          'Check email'
         ]
       },
-      captcha_handling: {
-        services: [
-          {
-            name: "2captcha",
-            api: "https://2captcha.com/api/",
-            cost: "$1-3 per 1000 captchas"
-          },
-          {
-            name: "Anti-Captcha", 
-            api: "https://anti-captcha.com/",
-            cost: "$1-2 per 1000 captchas"
-          }
-        ]
-      },
-      disclaimer: "⚠️ Use responsibly and respect Instagram's rate limits"
-    });
-  }
-
-  // Default response
-  return res.status(200).json({
-    success: false,
-    message: "📝 Instagram Password Reset Helper",
-    note: "⚠️ Direct API reset is blocked by Instagram (Aug 2025)",
-    available_actions: [
-      {
-        action: "guide",
-        url: `${req.headers.host}/?action=guide`,
-        description: "Get step-by-step manual reset guide"
-      },
-      {
-        action: "check", 
-        url: `${req.headers.host}/?action=check&username=USERNAME`,
-        description: "Check if account exists"
-      },
-      {
-        action: "script",
-        url: `${req.headers.host}/?action=script`, 
-        description: "Get browser automation script"
+      debug_info: {
+        graphql: graphqlResult.error || 'Failed',
+        mobile: mobileResult.error || 'Failed', 
+        web: webResult.error || 'Failed',
+        alternative: altResult.error || 'Failed'
       }
-    ],
-    reality_check: {
-      instagram_status: "🔒 Heavily protected against automation",
-      success_rate: "Manual: 95% | Automated: <5%",
-      recommendation: "Use manual method or browser automation with captcha solving"
+    });
+
+  } catch (error) {
+    console.error('❌ Main Error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: error.message,
+      fallback: `Manual reset: https://www.instagram.com/accounts/password/reset/`
+    });
+  }
+}
+
+// Method 1: GraphQL endpoint (newest)
+async function tryGraphQLMethod(username) {
+  try {
+    const sessionData = generateAdvancedSession();
+    
+    const response = await fetch('https://www.instagram.com/graphql/', {
+      method: 'POST',
+      headers: {
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Origin': 'https://www.instagram.com',
+        'Referer': 'https://www.instagram.com/accounts/password/reset/',
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+        'X-CSRFToken': sessionData.csrf,
+        'X-IG-App-ID': '936619743392459',
+        'X-Instagram-AJAX': sessionData.ajax,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: new URLSearchParams({
+        'email_or_username': username,
+        'source': 'account_recovery_email'
+      })
+    });
+
+    const data = await response.text();
+    console.log('GraphQL Response:', response.status, data.substring(0, 200));
+
+    if (response.ok && !data.includes('challenge') && !data.includes('error')) {
+      return {
+        success: true,
+        message: `✅ GraphQL method success for "${username}"`,
+        method: 'GraphQL',
+        status: response.status
+      };
     }
-  });
-}
 
-// Generate automation script example
-function generateAutomationScript() {
-  return `
-// Basic browser automation approach
-const puppeteer = require('puppeteer');
-
-async function resetInstagramPassword(username) {
-  const browser = await puppeteer.launch({ headless: false });
-  const page = await browser.newPage();
-  
-  try {
-    await page.goto('https://www.instagram.com/accounts/password/reset/');
-    await page.waitForSelector('input[name="email_or_username"]');
-    
-    await page.type('input[name="email_or_username"]', username);
-    
-    // Handle captcha manually or with service
-    console.log('Please complete captcha manually...');
-    await page.waitForTimeout(30000); // Wait for manual captcha
-    
-    await page.click('button[type="submit"]');
-    await page.waitForNavigation();
-    
-    console.log('Reset request sent!');
-  } finally {
-    await browser.close();
-  }
-}
-`;
-}
-
-function generatePuppeteerScript() {
-  return `
-const puppeteer = require('puppeteer');
-
-async function instagramReset(username) {
-  const browser = await puppeteer.launch({ 
-    headless: false,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
-  
-  const page = await browser.newPage();
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-  
-  try {
-    await page.goto('https://www.instagram.com/accounts/password/reset/', {
-      waitUntil: 'networkidle2'
-    });
-    
-    // Fill username
-    await page.waitForSelector('input[name="email_or_username"]', { timeout: 10000 });
-    await page.type('input[name="email_or_username"]', username);
-    
-    // Submit form
-    await page.click('button[type="submit"]');
-    
-    // Wait for result
-    await page.waitForTimeout(3000);
-    
-    const result = await page.evaluate(() => {
-      const successMsg = document.querySelector('[role="alert"]');
-      return successMsg ? successMsg.textContent : 'Check page manually';
-    });
-    
-    console.log('Result:', result);
-    return { success: true, message: result };
-    
+    return { success: false, error: `GraphQL failed: ${response.status}` };
   } catch (error) {
-    console.error('Error:', error);
-    return { success: false, error: error.message };
-  } finally {
-    await browser.close();
+    return { success: false, error: `GraphQL error: ${error.message}` };
   }
 }
 
-// Usage
-instagramReset('target_username').then(console.log);
-`;
-}
-
-function generatePlaywrightScript() {
-  return `
-const { chromium } = require('playwright');
-
-async function instagramResetPlaywright(username) {
-  const browser = await chromium.launch({ headless: false });
-  const context = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-  });
-  
-  const page = await context.newPage();
-  
+// Method 2: Mobile API endpoint
+async function tryMobileAPI(username) {
   try {
-    await page.goto('https://www.instagram.com/accounts/password/reset/');
+    const sessionData = generateAdvancedSession();
     
-    // Fill and submit
-    await page.fill('input[name="email_or_username"]', username);
-    await page.click('button[type="submit"]');
-    
-    // Handle potential captcha
-    await page.waitForTimeout(5000);
-    
-    console.log('Reset request processed');
-    return { success: true };
-    
+    const response = await fetch('https://i.instagram.com/api/v1/accounts/send_recovery_flow_email/', {
+      method: 'POST',
+      headers: {
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'Instagram 302.0.0.23.100 (iPhone14,2; iOS 17_0; en_US; en-US; scale=3.00; 1170x2532; 513684550)',
+        'X-IG-App-Locale': 'en_US',
+        'X-IG-Device-Locale': 'en_US',
+        'X-IG-Mapped-Locale': 'en_US',
+        'X-Pigeon-Session-Id': sessionData.pigeon,
+        'X-Pigeon-Rawclienttime': Math.floor(Date.now() / 1000),
+        'X-IG-Connection-Speed': '-1kbps',
+        'X-IG-Bandwidth-Speed-KBPS': '-1.000',
+        'X-IG-Bandwidth-TotalBytes-B': '0',
+        'X-IG-Bandwidth-TotalTime-MS': '0',
+        'X-IG-App-ID': '567067343352427'
+      },
+      body: new URLSearchParams({
+        'email_or_username': username,
+        '_uuid': sessionData.uuid,
+        'source': 'default'
+      })
+    });
+
+    const data = await response.text();
+    console.log('Mobile API Response:', response.status, data.substring(0, 200));
+
+    if (response.ok && (data.includes('success') || data.includes('sent'))) {
+      return {
+        success: true,
+        message: `✅ Mobile API success for "${username}"`,
+        method: 'Mobile API',
+        status: response.status
+      };
+    }
+
+    return { success: false, error: `Mobile API failed: ${response.status}` };
   } catch (error) {
-    return { success: false, error: error.message };
-  } finally {
-    await browser.close();
+    return { success: false, error: `Mobile API error: ${error.message}` };
   }
 }
-`;
+
+// Method 3: Web endpoint with advanced session
+async function tryWebEndpoint(username) {
+  try {
+    const sessionData = generateAdvancedSession();
+    
+    const response = await fetch('https://www.instagram.com/api/v1/web/accounts/account_recovery_send_ajax/', {
+      method: 'POST',
+      headers: {
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Origin': 'https://www.instagram.com',
+        'Referer': 'https://www.instagram.com/accounts/password/reset/',
+        'Sec-Ch-Ua': '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"Windows"',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors', 
+        'Sec-Fetch-Site': 'same-origin',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+        'X-CSRFToken': sessionData.csrf,
+        'X-IG-App-ID': '936619743392459',
+        'X-IG-WWW-Claim': sessionData.claim,
+        'X-Instagram-AJAX': sessionData.ajax,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: new URLSearchParams({
+        'email_or_username': username,
+        'recaptcha_challenge_field': ''
+      })
+    });
+
+    const data = await response.text();
+    console.log('Web Endpoint Response:', response.status, data.substring(0, 200));
+
+    if (response.ok) {
+      return {
+        success: true,
+        message: `✅ Web endpoint success for "${username}"`,
+        method: 'Web Endpoint',
+        status: response.status,
+        data: data.substring(0, 100)
+      };
+    }
+
+    return { success: false, error: `Web endpoint failed: ${response.status}` };
+  } catch (error) {
+    return { success: false, error: `Web endpoint error: ${error.message}` };
+  }
+}
+
+// Method 4: Alternative endpoint
+async function tryAlternativeEndpoint(username) {
+  try {
+    const sessionData = generateAdvancedSession();
+    
+    const response = await fetch('https://www.instagram.com/accounts/password/reset/ajax/', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json, text/plain, */*',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Origin': 'https://www.instagram.com',
+        'Referer': 'https://www.instagram.com/accounts/password/reset/',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        'X-CSRFToken': sessionData.csrf,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: `email_or_username=${encodeURIComponent(username)}`
+    });
+
+    const data = await response.text();
+    console.log('Alternative Response:', response.status, data.substring(0, 200));
+
+    if (response.ok) {
+      return {
+        success: true,
+        message: `✅ Alternative method success for "${username}"`,
+        method: 'Alternative Endpoint',
+        status: response.status
+      };
+    }
+
+    return { success: false, error: `Alternative failed: ${response.status}` };
+  } catch (error) {
+    return { success: false, error: `Alternative error: ${error.message}` };
+  }
+}
+
+// Generate advanced session data
+function generateAdvancedSession() {
+  const timestamp = Date.now();
+  const randomId = () => Math.random().toString(36).substring(2, 15);
+  
+  return {
+    csrf: generateString(32),
+    ajax: Math.floor(timestamp / 1000).toString(),
+    uuid: `${randomId()}-${randomId()}-${randomId()}-${randomId()}-${randomId()}`,
+    pigeon: `UFS-${randomId()}-${timestamp}`,
+    claim: `hmac.${generateString(43)}`
+  };
+}
+
+function generateString(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }
