@@ -36,21 +36,29 @@ export default async function handler(req, res) {
     // Generate fresh session data to avoid cookie issues
     const sessionData = generateSessionData();
     
-    // Instagram's password reset endpoint
-    const resetUrl = 'https://www.instagram.com/api/v1/web/accounts/account_recovery_send_ajax/';
+    // Try multiple endpoints - Instagram may have updated
+    const endpoints = [
+      'https://www.instagram.com/api/v1/web/accounts/account_recovery_send_ajax/',
+      'https://www.instagram.com/accounts/password/reset/ajax/',
+      'https://i.instagram.com/api/v1/accounts/account_recovery_send_ajax/'
+    ];
     
-    // Mimic real browser headers
-    const headers = {
+    // Enhanced headers for better success rate
+    const baseHeaders = {
       'Accept': '*/*',
       'Accept-Language': 'en-US,en;q=0.9',
-      'Accept-Encoding': 'gzip, deflate, br',
+      'Accept-Encoding': 'gzip, deflate, br, zstd',
       'Cache-Control': 'no-cache',
       'Content-Type': 'application/x-www-form-urlencoded',
       'Origin': 'https://www.instagram.com',
       'Referer': 'https://www.instagram.com/accounts/password/reset/',
+      'Priority': 'u=1, i',
       'Sec-Ch-Ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
+      'Sec-Ch-Ua-Full-Version-List': '"Not)A;Brand";v="8.0.0.0", "Chromium";v="138.0.7204.184", "Google Chrome";v="138.0.7204.184"',
       'Sec-Ch-Ua-Mobile': '?0',
+      'Sec-Ch-Ua-Model': '""',
       'Sec-Ch-Ua-Platform': '"Windows"',
+      'Sec-Ch-Ua-Platform-Version': '"15.0.0"',
       'Sec-Ch-Prefers-Color-Scheme': 'light',
       'Sec-Fetch-Dest': 'empty',
       'Sec-Fetch-Mode': 'cors',
@@ -65,70 +73,134 @@ export default async function handler(req, res) {
       'X-Web-Session-Id': sessionData.sessionId
     };
 
-    // Prepare form data
+    // Enhanced form data with additional fields
     const formData = new URLSearchParams({
       'email_or_username': username.trim(),
-      'recaptcha_challenge_field': ''
+      'recaptcha_challenge_field': '',
+      'source': 'auth_switcher_account',
+      'next': '/'
     });
 
-    // Make request to Instagram
-    const response = await fetch(resetUrl, {
-      method: 'POST',
-      headers: headers,
-      body: formData.toString(),
-      timeout: 15000 // 15 second timeout
-    });
+    let lastError = null;
+    let attempts = 0;
 
-    const responseText = await response.text();
-    let responseData;
+    // Try multiple endpoints
+    for (const resetUrl of endpoints) {
+      attempts++;
+      console.log(`🔄 Attempt ${attempts}: Trying endpoint ${resetUrl}`);
+      
+      try {
 
-    // Parse response
-    try {
-      responseData = JSON.parse(responseText);
-    } catch (e) {
-      responseData = { raw_response: responseText.substring(0, 500) };
+        // Make request to Instagram
+        const response = await fetch(resetUrl, {
+          method: 'POST',
+          headers: baseHeaders,
+          body: formData.toString()
+        });
+
+        const responseText = await response.text();
+        let responseData;
+
+        // Parse response
+        try {
+          responseData = JSON.parse(responseText);
+        } catch (e) {
+          responseData = { raw_response: responseText.substring(0, 500) };
+        }
+
+        console.log(`📊 Response from ${resetUrl}: ${response.status}`, responseData);
+
+        // Handle successful response
+        if (response.ok || response.status === 200) {
+          return res.status(200).json({
+            success: true,
+            message: `✅ Password reset email sent successfully for "${username}"`,
+            status: response.status,
+            endpoint: resetUrl,
+            data: responseData,
+            instructions: '📧 Check the email associated with this Instagram account',
+            note: 'If no email received, check spam folder or verify the username/email is correct'
+          });
+        }
+
+        // Check for specific error conditions
+        if (responseData.message && responseData.message.includes('challenge_required')) {
+          return res.status(200).json({
+            success: false,
+            message: `🔐 Challenge Required for "${username}"`,
+            error: 'Instagram requires additional verification',
+            status: response.status,
+            details: responseData,
+            solutions: [
+              'User needs to complete manual verification on Instagram',
+              'Go to instagram.com and complete the security challenge',
+              'Try again after completing verification'
+            ]
+          });
+        }
+
+        if (responseData.message && responseData.message.includes('user_not_found')) {
+          return res.status(200).json({
+            success: false,
+            message: `❌ User not found: "${username}"`,
+            error: 'Username or email does not exist',
+            status: response.status,
+            suggestions: [
+              'Verify the username/email is correct',
+              'Check if the account exists',
+              'Try using email instead of username or vice versa'
+            ]
+          });
+        }
+
+        // Store error for potential retry
+        lastError = { response, responseData, endpoint: resetUrl };
+
+      } catch (error) {
+        console.error(`❌ Error with endpoint ${resetUrl}:`, error);
+        lastError = { error, endpoint: resetUrl };
+        continue; // Try next endpoint
+      }
     }
 
-    console.log(`📊 Instagram Response: ${response.status}`, responseData);
-
-    // Handle successful response
-    if (response.ok || response.status === 200) {
-      return res.status(200).json({
-        success: true,
-        message: `✅ Password reset email sent successfully for "${username}"`,
-        status: response.status,
-        data: responseData,
-        instructions: '📧 Check the email associated with this Instagram account',
-        note: 'If no email received, check spam folder or verify the username/email is correct'
-      });
-    } 
-    
-    // Handle client errors (400-499)
-    else if (response.status >= 400 && response.status < 500) {
-      return res.status(200).json({
-        success: false,
-        message: `❌ Failed to send reset for "${username}"`,
-        error: 'User not found or invalid request',
-        status: response.status,
-        details: responseData,
-        suggestions: [
-          'Verify the username/email is correct',
-          'Check if the account exists',
-          'Try using email instead of username or vice versa'
-        ]
-      });
-    }
-    
-    // Handle server errors (500+)
-    else {
-      return res.status(200).json({
-        success: false,
-        message: '⚠️ Instagram server error',
-        error: 'Service temporarily unavailable',
-        status: response.status,
-        details: responseData,
-        retry: 'Please try again in a few minutes'
-      });
+    // If all endpoints failed, return the last error
+    if (lastError) {
+      if (lastError.response) {
+        const { response, responseData } = lastError;
+        
+        // Handle client errors (400-499)
+        if (response.status >= 400 && response.status < 500) {
+          return res.status(200).json({
+            success: false,
+            message: `❌ Failed to send reset for "${username}"`,
+            error: 'All endpoints failed - possible rate limiting or account issue',
+            status: response.status,
+            details: responseData,
+            endpoints_tried: endpoints,
+            suggestions: [
+              'Wait a few minutes and try again (rate limiting)',
+              'Verify the username/email is correct',
+              'Check if Instagram account exists',
+              'Complete any pending challenges on Instagram'
+            ]
+          });
+        }
+        
+        // Handle server errors (500+)
+        else {
+          return res.status(200).json({
+            success: false,
+            message: '⚠️ Instagram server error on all endpoints',
+            error: 'Service temporarily unavailable',
+            status: response.status,
+            details: responseData,
+            endpoints_tried: endpoints,
+            retry: 'Please try again in a few minutes'
+          });
+        }
+      } else {
+        throw lastError.error;
+      }
     }
 
   } catch (error) {
@@ -151,9 +223,9 @@ function generateSessionData() {
   
   return {
     csrfToken: generateRandomString(32, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'),
-    sessionId: `s${Math.floor(Math.random() * 100000)}:${generateRandomString(6, 'abcdefghijklmnopqrstuvwxyz0123456789')}:${generateRandomString(6, 'abcdefghijklmnopqrstuvwxyz0123456789')}`,
+    sessionId: `s${Math.floor(Math.random() * 999999)}:${generateRandomString(6, 'abcdefghijklmnopqrstuvwxyz0123456789')}:${generateRandomString(6, 'abcdefghijklmnopqrstuvwxyz0123456789')}`,
     wwwClaim: `hmac.${generateRandomString(43, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_')}`,
-    ajaxId: timestamp.toString()
+    ajaxId: (timestamp + Math.floor(Math.random() * 1000000)).toString()
   };
 }
 
