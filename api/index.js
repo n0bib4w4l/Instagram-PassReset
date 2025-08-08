@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  // ✅ CORS Headers
+  // ✅ CORS setup
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -25,7 +25,6 @@ export default async function handler(req, res) {
     const resetUrl =
       "https://www.instagram.com/api/v1/web/accounts/account_recovery_send_ajax/";
 
-    // ✅ Proper Headers with Cookies
     const headers = {
       Accept: "*/*",
       "Accept-Language": "en-US,en;q=0.9",
@@ -46,7 +45,7 @@ export default async function handler(req, res) {
       recaptcha_challenge_field: "",
     });
 
-    // ✅ Timeout Handling for Vercel
+    // ✅ Timeout for serverless
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
 
@@ -88,7 +87,6 @@ export default async function handler(req, res) {
   }
 }
 
-// ✅ Fake but Realistic IG Session Data
 function generateSessionData() {
   const timestamp = Math.floor(Date.now() / 1000);
   return {
