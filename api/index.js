@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  // CORS headers
+  // ✅ CORS Headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -13,21 +13,19 @@ export default async function handler(req, res) {
   }
 
   const { username } = req.query;
-
   if (!username) {
     return res.status(400).json({
       error: "Username required",
-      usage: `${req.headers.host}/?username=your_username`,
+      usage: `${req.headers.host}/api/reset?username=your_username`,
     });
   }
 
   try {
-    // Generate fake but realistic session data
     const sessionData = generateSessionData();
     const resetUrl =
       "https://www.instagram.com/api/v1/web/accounts/account_recovery_send_ajax/";
 
-    // Headers must include cookie with csrf token
+    // ✅ Proper Headers with Cookies
     const headers = {
       Accept: "*/*",
       "Accept-Language": "en-US,en;q=0.9",
@@ -48,9 +46,9 @@ export default async function handler(req, res) {
       recaptcha_challenge_field: "",
     });
 
-    // Timeout handling
+    // ✅ Timeout Handling for Vercel
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
     const response = await fetch(resetUrl, {
       method: "POST",
@@ -59,10 +57,10 @@ export default async function handler(req, res) {
       signal: controller.signal,
     });
 
-    clearTimeout(timeoutId);
+    clearTimeout(timeout);
 
-    let data;
     const text = await response.text();
+    let data;
     try {
       data = JSON.parse(text);
     } catch {
@@ -90,7 +88,7 @@ export default async function handler(req, res) {
   }
 }
 
-// Generate realistic Instagram session data
+// ✅ Fake but Realistic IG Session Data
 function generateSessionData() {
   const timestamp = Math.floor(Date.now() / 1000);
   return {
@@ -104,9 +102,7 @@ function generateSessionData() {
 function generateRandomString(length) {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
+  return Array.from({ length }, () =>
+    chars.charAt(Math.floor(Math.random() * chars.length))
+  ).join("");
 }
