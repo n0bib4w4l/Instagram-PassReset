@@ -1,4 +1,4 @@
-// index.js - Single file Instagram Password Reset API for Vercel
+// index.js - Fixed Instagram Password Reset API for Vercel
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -48,21 +48,19 @@ export default async function handler(req, res) {
       'Content-Type': 'application/x-www-form-urlencoded',
       'Origin': 'https://www.instagram.com',
       'Referer': 'https://www.instagram.com/accounts/password/reset/',
-      'Sec-Ch-Ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
+      'Sec-Ch-Ua': '"Not)A;Brand";v="24", "Chromium";v="122", "Google Chrome";v="122"',
       'Sec-Ch-Ua-Mobile': '?0',
       'Sec-Ch-Ua-Platform': '"Windows"',
-      'Sec-Ch-Prefers-Color-Scheme': 'light',
       'Sec-Fetch-Dest': 'empty',
       'Sec-Fetch-Mode': 'cors',
       'Sec-Fetch-Site': 'same-origin',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-      'X-Asbd-Id': '359341',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'X-Asbd-Id': '129477',
       'X-Csrftoken': sessionData.csrfToken,
       'X-Ig-App-Id': '936619743392459',
       'X-Ig-Www-Claim': sessionData.wwwClaim,
       'X-Instagram-Ajax': sessionData.ajaxId,
-      'X-Requested-With': 'XMLHttpRequest',
-      'X-Web-Session-Id': sessionData.sessionId
+      'X-Requested-With': 'XMLHttpRequest'
     };
 
     // Prepare form data
@@ -71,13 +69,20 @@ export default async function handler(req, res) {
       'recaptcha_challenge_field': ''
     });
 
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     // Make request to Instagram
     const response = await fetch(resetUrl, {
       method: 'POST',
       headers: headers,
       body: formData.toString(),
-      timeout: 15000 // 15 second timeout
+      signal: controller.signal
     });
+
+    // Clear timeout if request completes
+    clearTimeout(timeoutId);
 
     const responseText = await response.text();
     let responseData;
@@ -133,6 +138,17 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('❌ API Error:', error);
+    
+    // Handle timeout errors specifically
+    if (error.name === 'AbortError') {
+      return res.status(408).json({
+        success: false,
+        error: 'Request timeout',
+        message: 'The request to Instagram took too long',
+        suggestion: 'Please try again later',
+        timestamp: new Date().toISOString()
+      });
+    }
     
     return res.status(500).json({
       success: false,
