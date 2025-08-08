@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Instagram Password Reset API for Vercel",
   "main": "api/index.js",
-  "type": "module",
+
   "scripts": {
     "dev": "vercel dev",
     "build": "vercel build",
@@ -20,7 +20,7 @@
     "vercel",
     "serverless"
   ],
-  "author": "Your Name",
+  "author": "n0bib4w4l",
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
@@ -28,6 +28,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "your-repo-url"
+    "url": "https://github.com/n0bib4w4l/Instagram-PassReset/"
   }
 }
