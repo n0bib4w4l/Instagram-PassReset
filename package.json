@@ -2,17 +2,12 @@
   "name": "instagram-reset-api",
   "version": "1.0.0",
   "description": "Instagram password reset API on Vercel",
-  "main": "index.js",
+  "main": "api/index.js",
   "scripts": {
-    "dev": "vercel dev",
-    "start": "node server.js"
+    "start": "node api/index.js"
   },
-  "keywords": [
-    "instagram",
-    "password-reset",
-    "api",
-    "vercel"
-  ],
-  "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": "18.x"
+  }
 }
