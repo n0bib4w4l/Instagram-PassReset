@@ -1,5 +1,7 @@
-// index.js - Fixed Instagram Password Reset API for Vercel
-export default async function handler(req, res) {
+// api/index.js - CommonJS version
+const fetch = require('node-fetch'); // Add to package.json dependencies
+
+module.exports = async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -69,11 +71,10 @@ export default async function handler(req, res) {
       'recaptcha_challenge_field': ''
     });
 
-    // Create AbortController for timeout
+    // Make request to Instagram with timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-    // Make request to Instagram
     const response = await fetch(resetUrl, {
       method: 'POST',
       headers: headers,
@@ -81,13 +82,11 @@ export default async function handler(req, res) {
       signal: controller.signal
     });
 
-    // Clear timeout if request completes
     clearTimeout(timeoutId);
 
     const responseText = await response.text();
     let responseData;
 
-    // Parse response
     try {
       responseData = JSON.parse(responseText);
     } catch (e) {
@@ -96,7 +95,6 @@ export default async function handler(req, res) {
 
     console.log(`📊 Instagram Response: ${response.status}`, responseData);
 
-    // Handle successful response
     if (response.ok || response.status === 200) {
       return res.status(200).json({
         success: true,
@@ -107,8 +105,6 @@ export default async function handler(req, res) {
         note: 'If no email received, check spam folder or verify the username/email is correct'
       });
     } 
-    
-    // Handle client errors (400-499)
     else if (response.status >= 400 && response.status < 500) {
       return res.status(200).json({
         success: false,
@@ -123,8 +119,6 @@ export default async function handler(req, res) {
         ]
       });
     }
-    
-    // Handle server errors (500+)
     else {
       return res.status(200).json({
         success: false,
@@ -139,7 +133,6 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('❌ API Error:', error);
     
-    // Handle timeout errors specifically
     if (error.name === 'AbortError') {
       return res.status(408).json({
         success: false,
@@ -159,9 +152,8 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     });
   }
-}
+};
 
-// Helper function to generate session data
 function generateSessionData() {
   const timestamp = Math.floor(Date.now() / 1000);
   
@@ -173,7 +165,6 @@ function generateSessionData() {
   };
 }
 
-// Utility function to generate random strings
 function generateRandomString(length, chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') {
   let result = '';
   for (let i = 0; i < length; i++) {
