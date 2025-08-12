@@ -1,14 +1,32 @@
 {
-  "version": 2,
   "functions": {
-    "api/*.js": {
-      "runtime": "@vercel/node@2.15.10"
+    "api/**/*.js": {
+      "maxDuration": 20
     }
   },
-  "routes": [
+  "headers": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1.js"
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/index.js",
+      "destination": "/api/index.js"
     }
   ]
 }
