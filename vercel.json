@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/**/*.js": {
+    "api/index.js": {
       "maxDuration": 20
     }
   },
@@ -13,7 +13,7 @@
           "value": "*"
         },
         {
-          "key": "Access-Control-Allow-Methods",
+          "key": "Access-Control-Allow-Methods", 
           "value": "GET, POST, OPTIONS"
         },
         {
@@ -21,12 +21,6 @@
           "value": "Content-Type"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/index.js",
-      "destination": "/api/index.js"
     }
   ]
 }
