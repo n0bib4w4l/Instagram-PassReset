@@ -1,9 +1,7 @@
 {
-  "version": 2,
   "functions": {
-    "api/*.js": {
-      "runtime": "nodejs18.x",
-      "maxDuration": 10
+    "api/index.js": {
+      "runtime": "@vercel/node@3.0.5"
     }
   }
 }
