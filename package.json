@@ -1,25 +1,12 @@
 {
   "name": "instagram-api",
   "version": "1.0.0",
-  "description": "Instagram API for Vercel",
-  "main": "api/index.js",
   "type": "module",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "vercel build", 
-    "deploy": "vercel --prod",
-    "start": "node api/index.js"
+    "build": "exit 0"
   },
-  "dependencies": {
-    "node-fetch": "^3.3.2"
-  },
-  "devDependencies": {
-    "vercel": "^32.0.0"
-  },
+  "dependencies": {},
   "engines": {
-    "node": ">=18.0.0"
-  },
-  "keywords": ["instagram", "api", "vercel"],
-  "author": "",
-  "license": "MIT"
+    "node": "18.x"
+  }
 }
