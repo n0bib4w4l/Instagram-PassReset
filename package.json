@@ -6,8 +6,7 @@
   "main": "api/index.js",
   "scripts": {
     "dev": "vercel dev",
-    "build": "echo 'No build step required'",
-    "start": "node api/index.js"
+    "build": "echo 'No build step required'"
   },
   "license": "MIT",
   "engines": {
