@@ -1,21 +1,25 @@
 {
-  "name": "instagram-reset-api",
+  "name": "instagram-api",
   "version": "1.0.0",
-  "description": "Instagram password reset API endpoint",
-  "main": "index.js",
+  "description": "Instagram API for Vercel",
+  "main": "api/index.js",
+  "type": "module",
   "scripts": {
     "dev": "vercel dev",
-    "build": "vercel build",
+    "build": "vercel build", 
     "deploy": "vercel --prod",
-    "start": "vercel dev"
+    "start": "node api/index.js"
   },
-  "keywords": ["instagram", "api", "vercel", "serverless"],
-  "author": "",
-  "license": "MIT",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
   "devDependencies": {
     "vercel": "^32.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "keywords": ["instagram", "api", "vercel"],
+  "author": "",
+  "license": "MIT"
 }
