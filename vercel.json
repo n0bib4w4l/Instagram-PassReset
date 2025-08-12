@@ -1,26 +1,9 @@
 {
+  "version": 2,
   "functions": {
-    "api/index.js": {
-      "maxDuration": 20
+    "api/*.js": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 10
     }
-  },
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods", 
-          "value": "GET, POST, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type"
-        }
-      ]
-    }
-  ]
+  }
 }
